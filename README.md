@@ -3,9 +3,13 @@ A flexible configuration tool for debugging and programming embedded devices wit
 
 ### Usage
 Define custom sections as needed using python syntax for [configparser.ExtendedInterpolation](https://docs.python.org/3/library/configparser.html)
-A default .openocd directory with example files is create in the home dir. Can be overwritten on command line with a '-c'.
+A default .openocd directory with example files is create in the home dir (at first run). Can be overwritten on command line with a '-c'.
 
-config.xx: keys can be defined as desired. They can be specified with full path or none, they are prefix with default configuration folder if no path is given.
+config.xx: keys can be defined as desired. They can be specified with full path or none, they are prefix with the default configuration folder if no path is given.
+
+`openocd-tool [-c openocd.cfg]  <action>   /some_path/elffile`
+
+Use '-d' for a dry run. Prints only final commands.
 
 **Tags avalible:**
 ```
@@ -73,10 +77,6 @@ cd openocd-tool
 python -m build
 pip install dist/openocd-tool-0.0.1.tar.gz --user
 ```
-
-**Quick start**
-
-`openocd-tool [-c openocd.cfg]  <action>   /some_path/elffile`
 
 **Issues**
 * log-itm support is not finished yet.
