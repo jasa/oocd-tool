@@ -7,7 +7,7 @@ A default .openocd-tool directory with example files is create in the home dir (
 
 config.xx: keys can be defined as desired. They can be specified with full path or none, they are prefix with the default configuration folder if no path is given.
 
-`openocd-tool [-c openocd.cfg]  <action>   /some_path/elffile`
+`openocd-tool [-c openocd-tool.cfg]  <action>   /some_path/elffile`
 
 Use '-d' for a dry run. Prints only final commands.
 
