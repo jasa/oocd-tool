@@ -3,7 +3,7 @@ A flexible configuration tool for debugging and programming embedded devices wit
 
 ### Usage
 Define custom sections as needed using python syntax for [configparser.ExtendedInterpolation](https://docs.python.org/3/library/configparser.html)
-A default .openocd directory with example files is create in the home dir (at first run). Can be overwritten on command line with a '-c'.
+A default .openocd-tool directory with example files is create in the home dir (at first run). Can be overwritten on command line with a '-c'.
 
 config.xx: keys can be defined as desired. They can be specified with full path or none, they are prefix with the default configuration folder if no path is given.
 
@@ -22,7 +22,7 @@ Use '-d' for a dry run. Prints only final commands.
 ```
 gdb          Runs gdb standalone
 openocd      Runs openocd standalone
-gdb_openocd  Scripts spawns openocd in backgroup
+gdb_openocd  Script spawns openocd in backgroup
 ```
 
 **Configuration example:**
