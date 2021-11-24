@@ -5,7 +5,9 @@ A flexible configuration tool for debugging and programming embedded devices wit
 Define custom sections as needed using python syntax for [configparser.ExtendedInterpolation](https://docs.python.org/3/library/configparser.html)
 A default .openocd-tool directory with example files is create in the home dir (at first run). Can be overwritten on command line with a '-c'.
 
-config.xx: keys can be defined as desired. They can be specified with full path or none, they are prefix with the default configuration folder if no path is given.
+config.xx: keys can be defined as desired. They can be specified with full path or none, they are prefix with the default configuration directory if no path is given.
+
+Use forward slashes in config files on windows.
 
 `openocd-tool [-c openocd-tool.cfg]  <action>   /some_path/elffile`
 
@@ -22,7 +24,7 @@ Use '-d' for a dry run. Prints only final commands.
 ```
 gdb          Runs gdb standalone
 openocd      Runs openocd standalone
-gdb_openocd  Script spawns openocd in backgroup
+gdb_openocd  Script spawns openocd in backgroup (used for Windows support)
 ```
 
 **Configuration example:**
@@ -51,6 +53,7 @@ mode: openocd
 openocd_args: -f @config.ocd@ -c "itm_log @TMPFILE@ @FCPU@"
 mode: openocd
 
+# Linux / Windows
 [gdb]
 mode: gdb_openocd
 
@@ -59,6 +62,7 @@ gdb_executable: gdbgui
 gdb_args: '--gdb-cmd=${DEFAULT:gdb_executable} -ex "target extended-remote :3333" -x @config.1@ -x @config.2@ @ELFFILE@'
 mode: gdb_openocd
 
+# Linux only
 [gdb-pipe]
 gdb_args: ${gdb_pipe} -x @config.1@ -x @config.2@ @ELFFILE@
 mode: gdb
@@ -78,6 +82,9 @@ python -m build
 pip install dist/openocd-tool-0.0.1.tar.gz --user
 ```
 
-**Issues**
+**Status**
 * log-itm support is not finished yet.
+* Tested superficial in Windows with openocd 0.11.0, gdb 10.3
+* Newer versions gdbgui don't have Windows support
+
 

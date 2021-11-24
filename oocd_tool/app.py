@@ -96,7 +96,6 @@ def default_config_file():
     path = Path(path, Path('openocd-tool.cfg'))
     if (not path.exists()):
         raise ConfigException("Error: default config '{}' not found.".format(path))
-    print(path)
     return path
 
 def main():
