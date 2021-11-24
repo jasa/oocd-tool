@@ -65,7 +65,8 @@ config.ocd: openocd.cfg
 openocd_args: -f @config.ocd@
 
 # User defined key
-gdb_pipe: -iex 'target extended | openocd -c \\"gdb_port pipe\\" -f @config.ocd@'
+gdb_pipe_gui: -iex 'target extended | openocd -c \\"gdb_port pipe\\" -f @config.ocd@'
+gdb_pipe: -iex 'target extended | openocd -c "gdb_port pipe" -f @config.ocd@'
 
 # User sections
 [program]
@@ -90,7 +91,7 @@ mode: gdb
 
 [gui-pipe]
 gdb_executable: gdbgui
-gdb_args: --gdb-cmd="${DEFAULT:gdb_executable} ${gdb_pipe} -x @config.1@ -x @config.2@ @ELFFILE@"
+gdb_args: --gdb-cmd="${DEFAULT:gdb_executable} ${gdb_pipe_gui} -x @config.1@ -x @config.2@ @ELFFILE@"
 mode: gdb
 """
 
