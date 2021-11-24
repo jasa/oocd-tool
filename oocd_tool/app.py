@@ -7,14 +7,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 import re
-import sys, os
+import sys
 import signal
 import argparse
 import tempfile
 from .util import *
-
 from configparser import ConfigParser, ExtendedInterpolation
-
 from pathlib import PurePath, Path
 
 def signal_handler(sig, frame):
@@ -119,20 +117,21 @@ def main():
         error_exit("ELF file does not exists")
     if not Path(args.config).is_file():
         error_exit("Error cannot open config file: {}".format(args.config))
-    config_path = os.path.dirname(args.config)
+    config_path = PurePath(args.config).parent
 
     pc = parse_config(args.config, args.section)
-    result = translate(pc, config=config_path, elf=args.source, fcpu=args.fcpu)
+    # regex crashes with windows path's. as_posix() solves the issue.
+    result = translate(pc, config=config_path.as_posix(), elf=args.source, fcpu=args.fcpu)
     cfg = result.nodes
-
-    validate_configuration(cfg, args.section)
-    validate_files(result.files)
 
     # dry run
     if args.d:
         if cfg['mode'] in ['gdb_openocd', 'gdb']: print('\n{} {}\n'.format(cfg['gdb_executable'], cfg['gdb_args']))
         if cfg['mode'] in ['gdb_openocd', 'openocd']: print('{} {}\n'.format(cfg['openocd_executable'], cfg['openocd_args']))
         sys.exit(0)
+
+    validate_configuration(cfg, args.section)
+    validate_files(result.files)
 
     signal.signal(signal.SIGINT, signal_handler)
 
