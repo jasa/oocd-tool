@@ -11,6 +11,7 @@ import sys
 import signal
 import argparse
 import tempfile
+from time import sleep
 from .util import *
 from configparser import ConfigParser, ExtendedInterpolation
 from pathlib import PurePath, Path
@@ -18,9 +19,11 @@ from pathlib import PurePath, Path
 def signal_handler(sig, frame):
     pass
 
+
 def error_exit(message):
     sys.stderr.write(message + '\n')
     sys.exit(1)
+
 
 def parse_config(file, section):
     parser = ConfigParser(interpolation=ExtendedInterpolation())
@@ -31,21 +34,29 @@ def parse_config(file, section):
     for node in items:
         yield node
 
+
 def translate(nodes, **options):
     class Res:
         has_tmpfile = False
         nodes = {}
         files = {}
 
+    tmpcnt = 0
     for key, value in nodes:
         value = re.sub(r'@CONFIG@', options['config'], value)
         value = re.sub(r'@ELFFILE@', options['elf'], value)
         if value.find('@TMPFILE@') != -1:
-            Res.tmpfile = tempfile.NamedTemporaryFile()
-            Res.has_tmpfile = True
-            value = re.sub(r'@TMPFILE@', Res.tmpfile.name, value)
+            if tmpcnt == 0:
+                Res.tmpfile = tempfile.NamedTemporaryFile()
+                value = re.sub(r'@TMPFILE@', Res.tmpfile.name, value)
+                Res.has_tmpfile = True
+                tmpcnt += 1
+            elif tmpcnt == 1:
+                value = re.sub(r'@TMPFILE@', Res.tmpfile.name, value)
+            else:
+                raise ConfigException("Error: @TMPFILE@ may only be used in pairs once.")
         if value.find('@FCPU@') != -1:
-            if options['fcpu'] == None: raise ConfigException('Error: --fcpu is missing')
+            if options['fcpu'] == None: raise ConfigException('Error: --fcpu is missing.')
             value = re.sub(r'@FCPU@', str(options['fcpu']), value)
         if re.match('config\..+', key):
             Res.files['@{}@'.format(key)] = value
@@ -64,14 +75,17 @@ def translate(nodes, **options):
         Res.nodes[key] = item
     return Res
 
+
 def check_mandatory_keys(config, key_list):
     for key in key_list:
         if not key in config: raise ConfigException('Error: missing configuration entry: {}'.format(key))
+
 
 def check_executable(file):
     import shutil
     if shutil.which(file) == None:
         raise ConfigException('Error: executable not found: {}'.format(file))
+
 
 def validate_configuration(config, section):
     if not 'mode' in config or not config['mode'] in ['gdb_openocd', 'openocd', 'gdb']:
@@ -83,10 +97,12 @@ def validate_configuration(config, section):
         check_mandatory_keys(config, ['openocd_executable', 'openocd_args'])
         check_executable(config['openocd_executable'])
 
+
 def validate_files(files):
     for key, file in files.items():
         if not Path(file).is_file():
             raise ConfigException('Error: file not found: {}'.format(file))
+
 
 def default_config_file():
     path = Path(Path.home(), ".openocd-tool")
@@ -97,6 +113,37 @@ def default_config_file():
     if (not path.exists()):
         raise ConfigException("Error: default config '{}' not found.".format(path))
     return path
+
+
+def execute(cfg):
+    signal.signal(signal.SIGINT, signal_handler)
+    running, pid = is_process_running(cfg['openocd_executable'])
+    if running: raise ProcessException('Error: openocd is already runnning with pid: {}'.format(pid))
+    sproc = None
+    ocd = None
+    try:
+        if 'spawn_process' in cfg:
+            proc = BackgroundProcess(cfg['spawn_process'], '', True)
+        if cfg['mode'] == 'gdb_openocd':
+            ocd = BackgroundProcess(cfg['openocd_executable'], cfg['openocd_args'], False)
+            sleep(0.1)
+            if not ocd.is_running():
+                raise ProcessException('Error: openocd prematurely exited with code: {}'.format(ocd.returncode()))
+            BlockingProcess(cfg['gdb_executable'], cfg['gdb_args'])
+            ocd.terminate()
+        elif cfg['mode'] == 'openocd':
+            ocd = BackgroundProcess(cfg['openocd_executable'], cfg['openocd_args'], True)
+            ocd.wait()
+        elif cfg['mode'] == 'log':
+            pass #TODO
+        elif cfg['mode'] == 'gdb':
+            BlockingProcess(cfg['gdb_executable'], cfg['gdb_args'])
+    except ProcessException:
+        terminate(sproc)
+        terminate(ocd)
+        raise
+    terminate(sproc)
+    terminate(ocd)
 
 def main():
     parser = argparse.ArgumentParser(description = 'openocd-tool')
@@ -126,29 +173,17 @@ def main():
 
     # dry run
     if args.d:
-        if cfg['mode'] in ['gdb_openocd', 'gdb']: print('\n{} {}\n'.format(cfg['gdb_executable'], cfg['gdb_args']))
-        if cfg['mode'] in ['gdb_openocd', 'openocd']: print('{} {}\n'.format(cfg['openocd_executable'], cfg['openocd_args']))
+        print('')
+        if cfg['mode'] in ['gdb_openocd', 'gdb']: print('gdb: {} {}\n'.format(cfg['gdb_executable'], cfg['gdb_args']))
+        if cfg['mode'] in ['gdb_openocd', 'openocd']: print('openocd: {} {}\n'.format(cfg['openocd_executable'], cfg['openocd_args']))
+        if 'spawn_process' in cfg: print('spawn: {}\n'.format(cfg['spawn_process']))
         sys.exit(0)
 
     validate_configuration(cfg, args.section)
     validate_files(result.files)
+    execute(cfg)
 
-    signal.signal(signal.SIGINT, signal_handler)
 
-    if cfg['mode'] == 'gdb_openocd':
-        ocd = OpenOCD_Run('{} {}'.format(cfg['openocd_executable'], cfg['openocd_args']), False)
-        try:
-            GDB_Run('{} {}'.format(cfg['gdb_executable'], cfg['gdb_args']))
-        except GDBException as e:
-            ocd.terminate()
-            raise e
-        ocd.terminate()
-    elif cfg['mode'] == 'openocd':
-        ocd = OpenOCD_Run('{} {}'.format(cfg['openocd_executable'], cfg['openocd_args']), True)
-        ocd.wait()
-    elif cfg['mode'] == 'log':
-        pass #TODO
-    elif cfg['mode'] == 'gdb':
-        GDB_Run('{} {}'.format(cfg['gdb_executable'], cfg['gdb_args']))
-    else:
-        error_exit('Invalid mode: {}'.format(cfg['mode']))
+
+
+

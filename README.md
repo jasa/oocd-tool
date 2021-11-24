@@ -15,7 +15,7 @@ Use '-d' for a dry run. Prints only final commands.
 
 **Tags avalible:**
 ```
-@TMPFILE@  creates a temporary file
+@TMPFILE@  creates a temporary file. May only be used in pairs once, and not in default section.
 @CONFIG@   equales to default config path or path from '-c' on command line
 @FCPU@     value from '--fcpu' parameter
 @ELFFILE@  elf filename
@@ -53,7 +53,6 @@ mode: openocd
 openocd_args: -f @config.ocd@ -c "itm_log @TMPFILE@ @FCPU@"
 mode: openocd
 
-# Linux / Windows
 [gdb]
 mode: gdb_openocd
 
@@ -62,7 +61,12 @@ gdb_executable: gdbgui
 gdb_args: '--gdb-cmd=${DEFAULT:gdb_executable} -ex "target extended-remote :3333" -x @config.1@ -x @config.2@ @ELFFILE@'
 mode: gdb_openocd
 
-# Linux only
+# Gnome-terminal log
+[gdb-log]
+gdb_args: ${gdb_pipe} -x @config.1@ -x @config.2@ -ex "set logging file @TMPFILE@" -ex "set logging on" @ELFFILE@
+spawn_process: gnome-terminal -- bash -c "tail -f @TMPFILE@"
+mode: gdb
+
 [gdb-pipe]
 gdb_args: ${gdb_pipe} -x @config.1@ -x @config.2@ @ELFFILE@
 mode: gdb
@@ -83,7 +87,6 @@ pip install dist/openocd-tool-0.0.1.tar.gz --user
 ```
 
 **Status**
-* log-itm support is not finished yet.
 * Tested superficial in Windows with openocd 0.11.0, gdb 10.3
 * Newer versions gdbgui don't have Windows support
 

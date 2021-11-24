@@ -8,7 +8,7 @@
 #
 from pathlib import Path
 
-GDBINIT = """tui
+GDBINIT = """tui enable
 layout split
 focus cmd
 set print pretty
@@ -84,6 +84,12 @@ mode: gdb_openocd
 gdb_executable: gdbgui
 gdb_args: '--gdb-cmd=${DEFAULT:gdb_executable} -ex "target extended-remote :3333" -x @config.1@ -x @config.2@ @ELFFILE@'
 mode: gdb_openocd
+
+# Gnome-terminal log
+[gdb-log]
+gdb_args: ${gdb_pipe} -x @config.1@ -x @config.2@ -ex "set logging file @TMPFILE@" -ex "set logging on" @ELFFILE@
+spawn_process: gnome-terminal -- bash -c "tail -f @TMPFILE@"
+mode: gdb
 
 [gdb-pipe]
 gdb_args: ${gdb_pipe} -x @config.1@ -x @config.2@ @ELFFILE@
