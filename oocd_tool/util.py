@@ -8,6 +8,7 @@
 #
 import os
 import psutil
+import platform
 import subprocess
 from pathlib import PurePath, Path
 from time import sleep
@@ -37,8 +38,10 @@ class OpenOCD_Run:
         running, pid = is_openocd_running()
         if running: raise OpenOCDException('Error: openocd is already runnning with pid: {}'.format(pid))
 
+        kwargs = { 'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP } if 'Windows' in platform.platform() else {}
+
         redir = None if visible else subprocess.DEVNULL
-        self.proc = subprocess.Popen(command, stderr=redir, start_new_session=True, cwd=os.getcwd(), shell=True)
+        self.proc = subprocess.Popen(command, stderr=redir, start_new_session=True, cwd=os.getcwd(), shell=True, **kwargs)
         sleep(0.1)
         self.proc.poll()
         if self.proc.returncode != None:

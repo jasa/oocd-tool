@@ -117,11 +117,12 @@ def main():
         error_exit("ELF file does not exists")
     if not Path(args.config).is_file():
         error_exit("Error cannot open config file: {}".format(args.config))
-    config_path = PurePath(args.config).parent
+
+    # regex fails with windows path's. as_posix() solves the issue.
+    config_path = PurePath(args.config).parent.as_posix()
 
     pc = parse_config(args.config, args.section)
-    # regex crashes with windows path's. as_posix() solves the issue.
-    result = translate(pc, config=config_path.as_posix(), elf=args.source, fcpu=args.fcpu)
+    result = translate(pc, config=config_path, elf=args.source, fcpu=args.fcpu)
     cfg = result.nodes
 
     # dry run

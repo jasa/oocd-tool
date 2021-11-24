@@ -23,9 +23,14 @@ setuptools.setup(
     install_requires = [
          "setuptools>=42",
          "psutil>=5"
-    ],   
+    ],
     keywords='arm gdb cortex cortex-m trace microcontroller',
     packages = setuptools.find_packages(),
     python_requires=">=3.6",
     scripts = ['scripts/openocd-tool'],
+    entry_points = {
+        "console_scripts": [
+            "openocd-tool = oocd_tool.app:main",
+        ],
+    },
 )
