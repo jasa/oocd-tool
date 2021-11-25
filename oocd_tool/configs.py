@@ -102,10 +102,6 @@ mode: gdb
 """
 
 def create_default_config(path):
-    from .configs import GDBINIT
-    from .configs import OPENOCD_GDBINIT
-    from .configs import OCD_TOOL
-    from .configs import OPENOCD
     Path(path).mkdir()
     with Path(path, 'gdbinit').open(mode='w') as f: f.write(GDBINIT)
     with Path(path, 'openocd_gdbinit').open(mode='w') as f: f.write(OPENOCD_GDBINIT)

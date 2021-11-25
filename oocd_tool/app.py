@@ -12,9 +12,9 @@ import signal
 import argparse
 import tempfile
 from time import sleep
-from .util import *
 from configparser import ConfigParser, ExtendedInterpolation
 from pathlib import PurePath, Path
+from .util import *
 
 def signal_handler(sig, frame):
     pass
@@ -63,10 +63,12 @@ def translate(nodes, **options):
         else:
             Res.nodes[key] = value
 
+    # Append path to config keys there only contains filename
     path = Res.nodes['config_path'] if 'config_path' in Res.nodes else options['config_path']
     for key, file in Res.files.items():
         Res.files[key] = file if file.count('/') != 0 else str(PurePath(PurePath(path), PurePath(file)))
 
+    # Replace @config@ tags with real path
     expr = re.compile(r'@config\.[a-z0-9]+@')
     for key, item in Res.nodes.items():
         tags = expr.findall(item)
@@ -164,7 +166,7 @@ def main():
     if not Path(args.config).is_file():
         error_exit("Error cannot open config file: {}".format(args.config))
 
-    # regex fails with windows path's. as_posix() solves the issue.
+    # regex fails with windows path's. as_posix() used as workarround
     config_path = PurePath(args.config).parent.as_posix()
 
     pc = parse_config(args.config, args.section)

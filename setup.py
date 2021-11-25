@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="openocd-tool",
-    version="0.0.1",
+    version="0.0.2",
     author="Jacob Schultz Andersen",
     author_email="schultz.jacob@gmail.com",
     description="openocd-tool is a helper script to openocd. Used to program and debug embedded devices",

@@ -26,30 +26,30 @@ class BackgroundProcess:
         self.cmd = command
         kwargs = { 'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP } if 'Windows' in platform.platform() else {}
         redir = None if visible else subprocess.DEVNULL
-        self.proc = subprocess.Popen(command + ' ' + args, stderr=redir, start_new_session=True, cwd=os.getcwd(), shell=True, **kwargs)
+        self._proc = subprocess.Popen(command + ' ' + args, stderr=redir, start_new_session=True, cwd=os.getcwd(), shell=True, **kwargs)
 
     def wait(self):
-        self.proc.communicate()
-        if self.proc.returncode != 0:
-            raise ProcessException('Error: {} returncode: {}'.format(self.cmd, self.proc.returncode))
+        self._proc.communicate()
+        if self._proc.returncode != 0:
+            raise ProcessException('Error: {} returncode: {}'.format(self.cmd, self._proc.returncode))
 
     def terminate(self):
-        self.proc.terminate()
-        if self.proc.returncode != None and self.proc.returncode > 1:
-            raise ProcessException('Error: {} returncode: {}'.format(self.cmd, self.proc.returncode))
+        self._proc.terminate()
+        if self._proc.returncode != None and self._proc.returncode > 1:
+            raise ProcessException('Error: {} returncode: {}'.format(self.cmd, self._proc.returncode))
 
     def is_running(self):
-        return True if self.proc.poll() == None else False
+        return True if self._proc.poll() == None else False
 
     def returncode(self):
-        return self.returncode
+        return self._proc.returncode
 
 class BlockingProcess:
     def __init__(self, command, args):
         self.cmd = command
-        proc = subprocess.run(command + ' ' + args, cwd=os.getcwd(), shell=True)
-        if proc.returncode != 0:
-            raise ProcessException('Error: {} returncode: {}'.format(self.cmd, proc.returncode))
+        _proc = subprocess.run(command + ' ' + args, cwd=os.getcwd(), shell=True)
+        if _proc.returncode != 0:
+            raise ProcessException('Error: {} returncode: {}'.format(self.cmd, _proc.returncode))
 
 
 def is_process_running(name):
