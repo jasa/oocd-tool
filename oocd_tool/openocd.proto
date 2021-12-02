@@ -1,0 +1,30 @@
+//
+// Copyright (C) 2021 Jacob Schultz Andersen schultz.jacob@gmail.com
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+
+syntax = "proto3";
+
+package rpi;
+
+message LogStreamRequest {
+	string filename = 1;}
+
+message LogStreamResponse {
+	string data = 1;}
+
+message ProgramRequest {
+	bytes data = 1;}
+
+message void {}
+
+service OpenOcd {
+	rpc ProgramDevice(stream ProgramRequest) returns (stream LogStreamResponse);
+	rpc ResetDevice(void) returns (void);
+	rpc StartDebug(void) returns (void);
+ 	rpc StopDebug(void) returns (void);
+	rpc LogStreamCreate(LogStreamRequest) returns (stream LogStreamResponse);
+}

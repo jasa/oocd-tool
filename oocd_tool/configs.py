@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (C) 2021 Jacob Schultz Andersen schultz.jacob@gmail.com
 #
@@ -29,7 +28,8 @@ define rerun
 end
 """
 
-OPENOCD = """source [find interface/cmsis-dap.cfg]
+OPENOCD = """bindto 0.0.0.0
+source [find interface/cmsis-dap.cfg]
 
 transport select swd
 source [find target/stm32f4x.cfg]
@@ -49,6 +49,11 @@ proc program_device { SOURCE } {
 	shutdown
 }
 
+proc reset_device { } {
+	reset run
+	shutdown
+}
+
 init
 """
 
@@ -58,46 +63,28 @@ config_path: @CONFIG@
 config.1: gdbinit
 config.2: openocd_gdbinit
 gdb_executable: arm-none-eabi-gdb-py
-gdb_args: -ex "target extended-remote :3333" -x @config.1@ -x @config.2@ @ELFFILE@
-# openocd defaults
-openocd_executable: openocd
-config.ocd: openocd.cfg
-openocd_args: -f @config.ocd@
-
-# User defined key
-gdb_pipe_gui: -iex 'target extended | openocd -c \\"gdb_port pipe\\" -f @config.ocd@'
-gdb_pipe: -iex 'target extended | openocd -c "gdb_port pipe" -f @config.ocd@'
+gdb_args: -ex "target extended-remote pi:3333" -x @config.1@ -x @config.2@ @ELFFILE@
+openocd_remote: pi:50051
 
 # User sections
 [program]
-openocd_args: -f @config.ocd@ -c "program_device {@ELFFILE@}"
+openocd_args: program @ELFFILE@
 mode: openocd
 
-[log-itm]
-openocd_args: -f @config.ocd@ -c "itm_log @TMPFILE@ @FCPU@"
+[reset]
+openocd_args: reset
+mode: openocd
+
+[log]
+openocd_args: logstream /tmp/test.log
 mode: openocd
 
 [gdb]
-mode: gdb_openocd
+mode: gdb
 
 [gui]
 gdb_executable: gdbgui
-gdb_args: '--gdb-cmd=${DEFAULT:gdb_executable} -ex "target extended-remote :3333" -x @config.1@ -x @config.2@ @ELFFILE@'
-mode: gdb_openocd
-
-# Gnome-terminal log
-[gdb-log]
-gdb_args: ${gdb_pipe} -x @config.1@ -x @config.2@ -ex "set logging file @TMPFILE@" -ex "set logging on" @ELFFILE@
-spawn_process: gnome-terminal -- bash -c "tail -f @TMPFILE@"
-mode: gdb
-
-[gdb-pipe]
-gdb_args: ${gdb_pipe} -x @config.1@ -x @config.2@ @ELFFILE@
-mode: gdb
-
-[gui-pipe]
-gdb_executable: gdbgui
-gdb_args: --gdb-cmd="${DEFAULT:gdb_executable} ${gdb_pipe_gui} -x @config.1@ -x @config.2@ @ELFFILE@"
+gdb_args: '--gdb-cmd=${DEFAULT:gdb_executable} ${DEFAULT:gdb_args}'
 mode: gdb
 """
 
@@ -106,4 +93,4 @@ def create_default_config(path):
     with Path(path, 'gdbinit').open(mode='w') as f: f.write(GDBINIT)
     with Path(path, 'openocd_gdbinit').open(mode='w') as f: f.write(OPENOCD_GDBINIT)
     with Path(path, 'openocd.cfg').open(mode='w') as f: f.write(OPENOCD)
-    with Path(path, 'openocd-tool.cfg').open(mode='w') as f: f.write(OCD_TOOL)
+    with Path(path, 'oocd-tool.cfg').open(mode='w') as f: f.write(OCD_TOOL)

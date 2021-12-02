@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #
 # Copyright (C) 2021 Jacob Schultz Andersen schultz.jacob@gmail.com
 #
@@ -11,10 +11,12 @@ import sys
 import signal
 import argparse
 import tempfile
+import oocd_tool.rpc_client as rpc
+
 from time import sleep
 from configparser import ConfigParser, ExtendedInterpolation
 from pathlib import PurePath, Path
-from .util import *
+from oocd_tool.util import *
 
 def signal_handler(sig, frame):
     pass
@@ -80,7 +82,9 @@ def translate(nodes, **options):
 
 def check_mandatory_keys(config, key_list):
     for key in key_list:
-        if not key in config: raise ConfigException('Error: missing configuration entry: {}'.format(key))
+        if not key in config:
+            if not (key == 'openocd_executable' and 'openocd_remote' in config):
+                raise ConfigException('Error: missing configuration entry: {}'.format(key))
 
 
 def check_executable(file):
@@ -97,7 +101,8 @@ def validate_configuration(config, section):
         check_executable(config['gdb_executable'])
     if config['mode'] != 'gdb':
         check_mandatory_keys(config, ['openocd_executable', 'openocd_args'])
-        check_executable(config['openocd_executable'])
+        if 'openocd_remote' not in config:
+            check_executable(config['openocd_executable'])
 
 
 def validate_files(files):
@@ -106,27 +111,47 @@ def validate_files(files):
             raise ConfigException('Error: file not found: {}'.format(file))
 
 
-def default_config_file():
-    path = Path(Path.home(), ".openocd-tool")
+def create_default_config():
+    path = Path(Path.home(), ".oocd-tool")
     if (not path.exists()):
         from .configs import create_default_config
         create_default_config(path)
-    path = Path(path, Path('openocd-tool.cfg'))
+
+def default_config_file():
+    path = Path(Path(Path.home(), ".oocd-tool"), Path('oocd-tool.cfg'))
     if (not path.exists()):
         raise ConfigException("Error: default config '{}' not found.".format(path))
     return path
 
 
-def execute(cfg):
-    signal.signal(signal.SIGINT, signal_handler)
-    running, pid = is_process_running(cfg['openocd_executable'])
+def raise_if_running(filename):
+    running, pid = is_process_running(filename)
     if running: raise ProcessException('Error: openocd is already runnning with pid: {}'.format(pid))
+
+
+def run_openocd_remote(hostname, args):
+    n = args.find(' ')
+    cmd = args if n == -1 else args[0 : n]
+    print(n, cmd, args)
+    if cmd == 'program' and n != -1:
+        rpc.program_device(hostname, args[len(cmd) + 1:])
+    elif cmd == 'reset':
+        rpc.reset_device(hostname)
+    elif cmd == 'logstream' and n != -1:
+        rpc.log_stream_create(hostname, args[len(cmd) + 1:])
+    else:
+        raise ConfigException('Error: invalid ocdrpc mode: {}'.format(args))
+
+
+def execute(cfg):
     sproc = None
     ocd = None
     try:
         if 'spawn_process' in cfg:
             proc = BackgroundProcess(cfg['spawn_process'], '', True)
         if cfg['mode'] == 'gdb_openocd':
+            signal.signal(signal.SIGINT, signal_handler)
+            raise_if_running(cfg['openocd_executable'])
             ocd = BackgroundProcess(cfg['openocd_executable'], cfg['openocd_args'], False)
             sleep(0.1)
             if not ocd.is_running():
@@ -134,12 +159,20 @@ def execute(cfg):
             BlockingProcess(cfg['gdb_executable'], cfg['gdb_args'])
             ocd.terminate()
         elif cfg['mode'] == 'openocd':
-            ocd = BackgroundProcess(cfg['openocd_executable'], cfg['openocd_args'], True)
-            ocd.wait()
+            if 'openocd_remote' in cfg:
+                run_openocd_remote(cfg['openocd_remote'], cfg['openocd_args'])
+            else:
+                raise_if_running(cfg['openocd_executable'])
+                ocd = BackgroundProcess(cfg['openocd_executable'], cfg['openocd_args'], True)
+                ocd.wait()
         elif cfg['mode'] == 'log':
             pass #TODO
         elif cfg['mode'] == 'gdb':
-            BlockingProcess(cfg['gdb_executable'], cfg['gdb_args'])
+            if 'openocd_remote' in cfg:
+                with rpc.RemoteDebug(cfg['openocd_remote']):
+                    BlockingProcess(cfg['gdb_executable'], cfg['gdb_args'])
+            else:
+                BlockingProcess(cfg['gdb_executable'], cfg['gdb_args'])
     except ProcessException:
         terminate(sproc)
         terminate(ocd)
@@ -148,7 +181,7 @@ def execute(cfg):
     terminate(ocd)
 
 def main():
-    parser = argparse.ArgumentParser(description = 'openocd-tool')
+    parser = argparse.ArgumentParser(description = 'oocd-tool')
     parser.add_argument(dest = 'section', nargs = '?', metavar='SECTION', help = 'section in config file to run')
     parser.add_argument(dest = 'source', nargs = '?', metavar='ELF', help = 'target elf file')
     parser.add_argument('-c', dest = 'config', nargs = '?', metavar='CONFIG', help = 'config file')
@@ -156,6 +189,7 @@ def main():
     parser.add_argument('-d', action='store_true', help = 'dry run')
     args = parser.parse_args()
 
+    create_default_config()
     if args.config == None:
         args.config = default_config_file()
 
@@ -186,6 +220,6 @@ def main():
     execute(cfg)
 
 
-
-
+if __name__ == "__main__":
+    main()
 
