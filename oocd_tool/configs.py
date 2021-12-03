@@ -7,7 +7,7 @@
 #
 from pathlib import Path
 
-GDBINIT = """tui enable
+_GDBINIT = """tui enable
 layout split
 focus cmd
 set print pretty
@@ -18,7 +18,7 @@ compare-sections
 b main
 """
 
-OPENOCD_GDBINIT = """define restart
+_OPENOCD_GDBINIT = """define restart
   mon reset halt
 end
 
@@ -28,7 +28,7 @@ define rerun
 end
 """
 
-OPENOCD = """bindto 0.0.0.0
+_OPENOCD = """bindto 0.0.0.0
 source [find interface/cmsis-dap.cfg]
 
 transport select swd
@@ -57,7 +57,7 @@ proc reset_device { } {
 init
 """
 
-OCD_TOOL = """[DEFAULT]
+_OCD_TOOL = """[DEFAULT]
 config_path: @CONFIG@
 # gdb defaults
 config.1: gdbinit
@@ -88,9 +88,39 @@ gdb_args: '--gdb-cmd=${DEFAULT:gdb_executable} ${DEFAULT:gdb_args}'
 mode: gdb
 """
 
+_OCD_RPCD = """[DEFAULT]
+bindto: 0.0.0.0:50051
+cmd_program: openocd -f /home/ocd/.oocd-tool/openocd.cfg -c "program_device /tmp/program.elf"
+cmd_reset: openocd -f /home/ocd/.oocd-tool/openocd.cfg -c "reset_device"
+cmd_debug: /usr/bin/openocd -f /home/ocd/.oocd-tool/openocd.cfg
+[log]
+file: /tmp/ocd-rpcd.log
+level: ERROR
+"""
+
+_OCD_RPCD_SERVICE = """[Unit]
+Description=OpenOCD gRPC Service
+After=network.target
+
+[Service]
+# Bug in gRPC version 1.42 environment variable can be delete in future versions.
+Environment="LD_PRELOAD=/usr/lib/gcc/arm-linux-gnueabihf/10/libatomic.so"
+ExecStart=/home/ocd/.local/bin/oocd-rpcd /home/ocd/.oocd-tool/oocd-rpcd.cfg
+User=ocd
+KillMode=process
+Restart=always
+RestartSec=10
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
+"""
+
 def create_default_config(path):
     Path(path).mkdir()
-    with Path(path, 'gdbinit').open(mode='w') as f: f.write(GDBINIT)
-    with Path(path, 'openocd_gdbinit').open(mode='w') as f: f.write(OPENOCD_GDBINIT)
-    with Path(path, 'openocd.cfg').open(mode='w') as f: f.write(OPENOCD)
-    with Path(path, 'oocd-tool.cfg').open(mode='w') as f: f.write(OCD_TOOL)
+    with Path(path, 'gdbinit').open(mode='w') as f: f.write(_GDBINIT)
+    with Path(path, 'openocd_gdbinit').open(mode='w') as f: f.write(_OPENOCD_GDBINIT)
+    with Path(path, 'openocd.cfg').open(mode='w') as f: f.write(_OPENOCD)
+    with Path(path, 'oocd-tool.cfg').open(mode='w') as f: f.write(_OCD_TOOL)
+    with Path(path, 'oocd-rpcd.cfg').open(mode='w') as f: f.write(_OCD_RPCD)
+    with Path(path, 'oocd-rpcd.service').open(mode='w') as f: f.write(_OCD_RPCD_SERVICE)

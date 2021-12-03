@@ -16,11 +16,10 @@ import oocd_tool.rpc_client as rpc
 from time import sleep
 from configparser import ConfigParser, ExtendedInterpolation
 from pathlib import PurePath, Path
-from oocd_tool.util import *
+from oocd_tool.process import *
 
 def signal_handler(sig, frame):
     pass
-
 
 def error_exit(message):
     sys.stderr.write(message + '\n')
