@@ -1,7 +1,8 @@
+[![Upload Python Package](https://github.com/jasa/oocd-tool/actions/workflows/python-publish.yml/badge.svg)](https://github.com/jasa/oocd-tool/actions/workflows/python-publish.yml)
 # oocd-tool
-### A flexible configuration and remote contol tool for openocd. 
+### A flexible configuration and remote contol tool for openocd.
 
-This tool was made to create a wireless development environment for a project. It's made public since a lack of easy solutions and it will be developed futher if there are a interrest for this tool.
+This tool was made to create a wireless development environment for a project. It's made public since a lack of easy solutions and it will be developed futher if there are a interrest in this tool.
 
 **Features**
 1. Controls openocd remotely through gRPC. Makes wireless debugging/programming possible with a raspberry pi.
