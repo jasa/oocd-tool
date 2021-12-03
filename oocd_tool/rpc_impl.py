@@ -13,7 +13,11 @@ import logging
 import platform
 from time import sleep
 
+_TMP_ELF_FILE = "/tmp/program.elf"
 _LOGGER = logging.getLogger(__name__)
+class ConfigException(Exception):
+    def __init__(self, message):
+        self.message = message
 
 def openocd_program(cmd):
     killall("openocd")
@@ -25,7 +29,7 @@ def openocd_program(cmd):
     if ret:
         _LOGGER.error("openocd_program failed: '{}', returncode: {}".format(cmd, ret))
         raise subprocess.CalledProcessError(ret, cmd)
-    os.unlink("/tmp/program.elf")
+    os.unlink(_TMP_ELF_FILE)
 
 def openocd_reset_device(cmd):
     killall("openocd")
@@ -52,7 +56,7 @@ def killall(name):
         os.kill(pid, signal.SIGTERM)
 
 def write_file(request_iterator):
-        file = open("/tmp/program.elf", "wb")
+        file = open(_TMP_ELF_FILE, "wb")
         for request in request_iterator:
             file.write(request.data)
         file.close()
