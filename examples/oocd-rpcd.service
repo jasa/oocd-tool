@@ -1,0 +1,16 @@
+[Unit]
+Description=OpenOCD gRPC Service
+After=network.target
+
+[Service]
+# Bug in gRPC version 1.42 environment variable can be delete in future versions.
+Environment="LD_PRELOAD=/usr/lib/gcc/arm-linux-gnueabihf/10/libatomic.so"
+ExecStart=/home/ocd/.local/bin/oocd-rpcd /home/ocd/.oocd-tool/oocd-rpcd.cfg
+User=ocd
+KillMode=process
+Restart=always
+RestartSec=10
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

@@ -4,16 +4,16 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="openocd-tool",
-    version="0.0.2",
+    name="oocd_tool",
+    version="0.1.0",
     author="Jacob Schultz Andersen",
     author_email="schultz.jacob@gmail.com",
-    description="openocd-tool is a helper script to openocd. Used to program and debug embedded devices",
+    description="A flexible configuration and remote contol tool for openocd.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/jasa/openocd-tool.git",
+    url="https://github.com/jasa/oocd-tool.git",
     project_urls={
-        "Bug Tracker": "https://github.com/jasa/openocd-tool/issues",
+        "Bug Tracker": "https://github.com/jasa/oocd-tool/issues",
     },
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -22,15 +22,17 @@ setuptools.setup(
     ],
     install_requires = [
          "setuptools>=42",
-         "psutil>=5"
+         "psutil>=5",
+         "grpcio>=1.41",
+         "grpcio-tools>=1.41"
     ],
     keywords='arm gdb cortex cortex-m trace microcontroller',
     packages = setuptools.find_packages(),
     python_requires=">=3.6",
-    scripts = ['scripts/openocd-tool'],
+    scripts = ['bin/oocd-tool', 'bin/oocd-rpcd'],
     entry_points = {
         "console_scripts": [
-            "openocd-tool = oocd_tool.app:main",
+            "oocd_tool = oocd_tool.main:main",
         ],
     },
 )
