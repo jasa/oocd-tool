@@ -61,7 +61,7 @@ su - ocd
 git clone https://github.com/jasa/oocd-tool.git
 cd oocd-tool
 python -m build
-pip install dist/oocd_tool-0.0.3.tar.gz
+pip install dist/oocd_tool-0.1.0.tar.gz
 cp examples/oocd-rpcd.service to /etc/systemd/system
 mkdir ~/.oocd-tool
 cp examples/openocd.cfg ~/.oocd-tool
