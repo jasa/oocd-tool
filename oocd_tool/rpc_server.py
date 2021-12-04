@@ -11,6 +11,7 @@ import argparse
 import grpc
 import logging
 import threading
+import tempfile
 from pathlib import Path
 from configparser import ConfigParser
 from concurrent import futures
@@ -57,8 +58,9 @@ class OpenOcd(openocd_pb2_grpc.OpenOcdServicer):
             stop_event.set()
         context.add_callback(on_rpc_done)
 
-        write_file(request_iterator)
-        log_output = openocd_program(self.config['cmd_program'])
+        tmp = tempfile.NamedTemporaryFile()
+        write_stream_to_file(tmp.name, request_iterator)
+        log_output = openocd_program(self.config['cmd_program'].format(tmp.name))
 
         try:
             for data in log_output:

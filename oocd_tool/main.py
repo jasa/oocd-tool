@@ -167,6 +167,7 @@ def execute(cfg):
         elif cfg['mode'] == 'log':
             pass #TODO
         elif cfg['mode'] == 'gdb':
+            signal.signal(signal.SIGINT, signal_handler)
             if 'openocd_remote' in cfg:
                 with rpc.RemoteDebug(cfg['openocd_remote']):
                     BlockingProcess(cfg['gdb_executable'], cfg['gdb_args'])

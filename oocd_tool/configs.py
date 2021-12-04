@@ -90,7 +90,7 @@ mode: gdb
 
 _OCD_RPCD = """[DEFAULT]
 bindto: 0.0.0.0:50051
-cmd_program: openocd -f /home/ocd/.oocd-tool/openocd.cfg -c "program_device /tmp/program.elf"
+cmd_program: openocd -f /home/ocd/.oocd-tool/openocd.cfg -c "program_device {}"
 cmd_reset: openocd -f /home/ocd/.oocd-tool/openocd.cfg -c "reset_device"
 cmd_debug: /usr/bin/openocd -f /home/ocd/.oocd-tool/openocd.cfg
 [log]
