@@ -35,4 +35,6 @@ setuptools.setup(
             "oocd_tool = oocd_tool.main:main",
         ],
     },
+    include_package_data=True,
+    package_data={ "": ["oocd_tool/credentials/*"] },
 )
