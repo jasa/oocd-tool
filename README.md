@@ -9,6 +9,7 @@ This tool was made to create a wireless development environment for a project. I
 2. Runs openocd as background process then debugging. (Windows compatible)
 3. Runs gdb/openocd in pipe mode.
 4. Capable of log streaming from remote openocd host.
+5. TLS/SSL based tansport layer
 
 ### Usage
 Define custom sections as needed using python syntax for [configparser.ExtendedInterpolation](https://docs.python.org/3/library/configparser.html)
@@ -43,6 +44,12 @@ openocd      Runs openocd standalone, localy or remotely.
 gdb_openocd  Spawns openocd in backgroup (used for Windows support).
 ```
 
+**Security:**
+
+Overwrite the default demo certificate with you own for use in a unsecure environment, since the RPC deamon gives shell acces to the host.
+TLS mode is default on and should be explicitly disabled in the configuration.
+Use '`examples/gen-certificates.sh -cn <hostname>`' to generate certificates in current directory.
+
 **Installation:**
 
 ```sh
@@ -52,7 +59,7 @@ python -m build
 pip install dist/oocd-tool-0.0.3.tar.gz --user
 ```
 
-### Installation of RPC daemon on a remote pi4.
+**Installation of RPC daemon on a remote pi4.**
 ```bash
 # Tested on: Pi OS - Debian Buster
 sudo apt install openocd
@@ -81,4 +88,4 @@ sudo systemctl enable oocd-rpcd
 **Status**
 * Tested superficial in Windows with openocd 0.11.0, gdb 10.3
 * A ELF is mandatory on command line, even if it's not used. Needs to be fixed.
-
+* In gRPC version 1.42.0 on Pi OS is the following environment variable required 'LD_PRELOAD=/usr/lib/gcc/arm-linux-gnueabihf/10/libatomic.so'. due to linker problem, probably fixed in the gRPC release.

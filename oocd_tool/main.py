@@ -11,7 +11,7 @@ import sys
 import signal
 import argparse
 import tempfile
-import oocd_tool.rpc_client as rpc
+import oocd_tool.rpc_client as rpc_client
 
 from time import sleep
 from configparser import ConfigParser, ExtendedInterpolation
@@ -25,6 +25,10 @@ def error_exit(message):
     sys.stderr.write(message + '\n')
     sys.exit(1)
 
+def get_config_value(config, key, message):
+    if not key in config:
+        raise ConfigException(message)
+    return config[key]
 
 def parse_config(file, section):
     parser = ConfigParser(interpolation=ExtendedInterpolation())
@@ -128,57 +132,108 @@ def raise_if_running(filename):
     if running: raise ProcessException('Error: openocd is already runnning with pid: {}'.format(pid))
 
 
-def run_openocd_remote(hostname, args):
+def run_openocd_remote(rpc, args):
     n = args.find(' ')
     cmd = args if n == -1 else args[0 : n]
-    print(n, cmd, args)
     if cmd == 'program' and n != -1:
-        rpc.program_device(hostname, args[len(cmd) + 1:])
+        stream = rpc.program_device(args[len(cmd) + 1:])
+        for line in stream:
+            print(line)
     elif cmd == 'reset':
-        rpc.reset_device(hostname)
+        rpc.reset_device()
     elif cmd == 'logstream' and n != -1:
-        rpc.log_stream_create(hostname, args[len(cmd) + 1:])
+        stream = rpc.log_stream_create(args[len(cmd) + 1:])
+        for line in stream:
+            print(line)
     else:
         raise ConfigException('Error: invalid ocdrpc mode: {}'.format(args))
 
 
-def execute(cfg):
-    sproc = None
-    ocd = None
-    try:
-        if 'spawn_process' in cfg:
-            proc = BackgroundProcess(cfg['spawn_process'], '', True)
-        if cfg['mode'] == 'gdb_openocd':
-            signal.signal(signal.SIGINT, signal_handler)
-            raise_if_running(cfg['openocd_executable'])
-            ocd = BackgroundProcess(cfg['openocd_executable'], cfg['openocd_args'], False)
-            sleep(0.1)
-            if not ocd.is_running():
-                raise ProcessException('Error: openocd prematurely exited with code: {}'.format(ocd.returncode()))
+class LocalExecuteInterface:
+    def __init__(self):
+        self.ocd = None
+
+    def spawn_process(self, cfg):
+        proc = BackgroundProcess(cfg['spawn_process'], '', True)
+
+    def debug_spawned_openocd(self, cfg):
+        raise_if_running(cfg['openocd_executable'])
+        self.ocd = BackgroundProcess(cfg['openocd_executable'], cfg['openocd_args'], False)
+        sleep(0.1)
+        if not self.ocd.is_running():
+            raise ProcessException('Error: openocd prematurely exited with code: {}'.
+                                   format(self.ocd.returncode()))
+        BlockingProcess(cfg['gdb_executable'], cfg['gdb_args'])
+        self.ocd.terminate()
+
+    def debug(self, cfg):
+        raise_if_running(cfg['openocd_executable'])
+        BlockingProcess(cfg['gdb_executable'], cfg['gdb_args'])
+
+    def openocd_only(self, cfg):
+        raise_if_running(cfg['openocd_executable'])
+        self.ocd = BackgroundProcess(cfg['openocd_executable'], cfg['openocd_args'], True)
+        self.ocd.wait()
+        pass
+
+    def __del__(self):
+        terminate(self.ocd)
+
+
+class RemoteExecuteInterface:
+    def __init__(self, channel, auth_key):
+        self.channel = channel
+        self.auth_key = auth_key
+
+    def spawn_process(self):
+        # TODO
+        raise ConfigException("Not implemented yet.")
+
+    def debug_spawned_openocd(self):
+        raise ConfigException("Invalid mode configured.")
+
+    def debug(self, cfg):
+        rpc = rpc_client.ClientChannel(cfg['openocd_remote'], self.channel, self.auth_key)
+        with rpc.debug_device():
             BlockingProcess(cfg['gdb_executable'], cfg['gdb_args'])
-            ocd.terminate()
-        elif cfg['mode'] == 'openocd':
-            if 'openocd_remote' in cfg:
-                run_openocd_remote(cfg['openocd_remote'], cfg['openocd_args'])
-            else:
-                raise_if_running(cfg['openocd_executable'])
-                ocd = BackgroundProcess(cfg['openocd_executable'], cfg['openocd_args'], True)
-                ocd.wait()
-        elif cfg['mode'] == 'log':
-            pass #TODO
-        elif cfg['mode'] == 'gdb':
-            signal.signal(signal.SIGINT, signal_handler)
-            if 'openocd_remote' in cfg:
-                with rpc.RemoteDebug(cfg['openocd_remote']):
-                    BlockingProcess(cfg['gdb_executable'], cfg['gdb_args'])
-            else:
-                BlockingProcess(cfg['gdb_executable'], cfg['gdb_args'])
-    except ProcessException:
-        terminate(sproc)
-        terminate(ocd)
-        raise
-    terminate(sproc)
-    terminate(ocd)
+
+    def openocd_only(self, cfg):
+        rpc = rpc_client.ClientChannel(cfg['openocd_remote'], self.channel, self.auth_key)
+        run_openocd_remote(rpc, cfg['openocd_args'])
+
+
+def execute(cfg):
+    auth_key = ""
+    channel = rpc_client.secure_channel
+    exec = None
+
+    if 'openocd_remote' in cfg:
+        if 'tls_mode' in cfg and cfg['tls_mode'] == 'disabled':
+            channel = rpc_client.insecure_channel
+        else:
+            auth_key = get_config_value(cfg, 'cert_auth_key', "Error: 'cert_signature_key' not specified.")
+        exec = RemoteExecuteInterface(channel, auth_key)
+    else:
+        exec = LocalExecuteInterface()
+
+    if 'spawn_process' in cfg:
+        exec.spawn_process(cfg)
+
+    if cfg['mode'] == 'gdb_openocd':
+        signal.signal(signal.SIGINT, signal_handler)
+        exec.debug_spawned_openocd(cfg)
+
+    elif cfg['mode'] == 'openocd':
+        exec.openocd_only(cfg)
+
+    elif cfg['mode'] == 'log':
+        #TODO
+        raise ConfigException("Not implemented yet.")
+
+    elif cfg['mode'] == 'gdb':
+        signal.signal(signal.SIGINT, signal_handler)
+        exec.debug(cfg)
+
 
 def main():
     parser = argparse.ArgumentParser(description = 'oocd-tool')
@@ -217,6 +272,7 @@ def main():
 
     validate_configuration(cfg, args.section)
     validate_files(result.files)
+    rpc_client.load_certificates(cfg)
     execute(cfg)
 
 

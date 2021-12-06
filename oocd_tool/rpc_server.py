@@ -16,12 +16,12 @@ from pathlib import Path
 from configparser import ConfigParser
 from concurrent import futures
 
+import oocd_tool._credentials as _credentials
 import oocd_tool.openocd_pb2 as openocd_pb2
 import oocd_tool.openocd_pb2_grpc as openocd_pb2_grpc
 from oocd_tool.rpc_impl import *
 
 _LOGGER = logging.getLogger(__name__)
-
 class OpenOcd(openocd_pb2_grpc.OpenOcdServicer):
 
     def __init__(self, config):
@@ -86,11 +86,45 @@ class OpenOcd(openocd_pb2_grpc.OpenOcdServicer):
         _LOGGER.info("StopDebug called.")
         return openocd_pb2.void()
 
+class SignatureValidationInterceptor(grpc.ServerInterceptor):
+
+    def __init__(self, auth):
+        self.auth_key = auth
+
+        def abort(ignored_request, context):
+            context.abort(grpc.StatusCode.UNAUTHENTICATED, 'Invalid signature')
+
+        self._abortion = grpc.unary_unary_rpc_method_handler(abort)
+
+    def intercept_service(self, continuation, handler_call_details):
+        method_name = handler_call_details.method.split('/')[-1]
+        expected_metadata = (self.auth_key, method_name[::-1])
+        if expected_metadata in handler_call_details.invocation_metadata:
+            return continuation(handler_call_details)
+        else:
+            return self._abortion
+
 
 def _running_server(config):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=2), maximum_concurrent_rpcs=1)
     openocd_pb2_grpc.add_OpenOcdServicer_to_server(OpenOcd(config), server)
     actual_port = server.add_insecure_port(config['bindto'])
+    server.start()
+    return server
+
+
+def _running_tls_server(config, auth):
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=2), maximum_concurrent_rpcs=1,
+                         interceptors=(SignatureValidationInterceptor(auth),))
+
+    openocd_pb2_grpc.add_OpenOcdServicer_to_server(OpenOcd(config), server)
+
+    server_credentials = grpc.ssl_server_credentials(((
+        _credentials.SERVER_CERTIFICATE_KEY,
+        _credentials.SERVER_CERTIFICATE,
+    ),))
+
+    port = server.add_secure_port(config['bindto'], server_credentials)
     server.start()
     return server
 
@@ -121,7 +155,14 @@ def main():
             logging.basicConfig()
 
     config = parser['DEFAULT']
-    server = _running_server(config)
+    if 'tls_mode' in config and config['tls_mode'] == 'disabled':
+        server = _running_server(config)
+    else:
+        if not 'cert_auth_key' in config:
+            _LOGGER.error("'cert_auth_key' not specified.")
+            os.exit(1)
+        _credentials.load_certificates(config)
+        server = _running_tls_server(config, config['cert_auth_key'])
     server.wait_for_termination()
 
 
