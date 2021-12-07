@@ -30,7 +30,7 @@ esac
 
 
 echo "Generating root CA"
-$OPENSSL_CMD req -x509 -sha256 -nodes -days 1000 -newkey rsa:2048 -keyout private_ca_key.key -out ca-cert.pem -subj "/C=DK/ST=N/A/O=oocd-tool/OU=gRPC"
+$OPENSSL_CMD req -x509 -sha256 -nodes -days 1000 -newkey rsa:2048 -keyout private_ca_key.key -out ca-cert.pem -subj "/C=DK/ST=/O=oocd-tool/OU=gRPC"
 if [ $? -ne 0 ] ; then
    echo "ERROR: Failed to generate self signed root CA"
    $RM_CMD $EXTFILE
@@ -38,7 +38,7 @@ if [ $? -ne 0 ] ; then
 fi
 
 echo "Generating certificate request"
-$OPENSSL_CMD req -newkey rsa:2048 -days 1000 -nodes -keyout server_key.pem -subj "/C=DK/ST=N/A/O=oocd-tool/OU=gRPC/CN=${COMMON_NAME}" > server_req.pem
+$OPENSSL_CMD req -newkey rsa:2048 -days 1000 -nodes -keyout server_key.pem -subj "/C=DK/ST=/O=oocd-tool/OU=gRPC/CN=${COMMON_NAME}" > server_req.pem
 if [ $? -ne 0 ] ; then
    echo "ERROR: Failed to generate server certificate request"
    $RM_CMD $EXTFILE
