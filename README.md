@@ -2,14 +2,14 @@
 # oocd-tool
 ### A flexible configuration and remote contol tool for openocd.
 
-This tool was made to create a wireless development environment for a project. It's made public since a lack of easy solutions and it will be developed futher if there are a interrest in this tool.
+This tool was made to create a wireless development environment for a project. It can hopefully be useful to someone else and any suggestions or ideas there can improve the tool are welcome.
 
 **Features**
 1. Controls openocd remotely through gRPC. Makes wireless debugging/programming possible with a raspberry pi.
 2. Runs openocd as background process then debugging. (Windows compatible)
 3. Runs gdb/openocd in pipe mode.
 4. Capable of log streaming from remote openocd host.
-5. TLS/SSL based tansport layer
+5. TLS/SSL based tansport layer with preshared key.
 
 ### Usage
 Define custom sections as needed using python syntax for [configparser.ExtendedInterpolation](https://docs.python.org/3/library/configparser.html)
@@ -29,6 +29,9 @@ Use '-d' for a dry run. Prints only commands.
 Command line syntax gRPC daemon, see examples folder for configuration:
 `oocd-rpcd -c oocd-rpcd.cfg`
 
+A usefull environment variable for debugging.
+`export GRPC_VERBOSITY=debug`
+
 **Tags avalible:**
 ```
 @TMPFILE@  creates a temporary file. May only be used in pairs once, and not in default section.
@@ -46,9 +49,7 @@ gdb_openocd  Spawns openocd in backgroup (used for Windows support).
 
 **Security:**
 
-Overwrite the default demo certificate with you own for use in a unsecure environment, since the RPC deamon gives shell acces to the host.
-TLS mode is default on and should be explicitly disabled in the configuration.
-Use '`examples/gen-certificates.sh -cn <hostname>`' to generate certificates in current directory.
+For use in a unsecure environments overwrite the buildin certificates with you own. The RPC host itself is reasonably protected since there are no direct shell access for now. TLS mode is default on and should be explicitly disabled in the configuration.
 
 **Installation:**
 
@@ -85,7 +86,29 @@ sudo systemctl start oocd-rpcd
 sudo systemctl enable oocd-rpcd
 ```
 
+**Generate new certificated**
+```
+# On remote server
+
+su - ocd
+cd ~/.oocd-tool
+~/oocd-tool/examples/gen-certificates.sh -cn <hostname>
+
+vi oocd-rpc.cfg
+# update following keys to:
+#   server_key: /home/ocd/.oocd_tool/server_key.pem
+#   server_cert: /home/ocd/.oocd_tool/server_cert.pem
+
+# On Clients
+
+# copy root_ca.pem to /you_home/.oocd-tool on all clients
+# update following key in /you_home/.oocd-tool/oocd-tool.cfg on clients
+#   root_ca: /your_home/.oocd_tool/ca_cert.pem
+
+# REMEMBER to change shared secret `cert_auth_key` on both client and server.
+
+```
 **Status**
 * Tested superficial in Windows with openocd 0.11.0, gdb 10.3
-* A ELF is mandatory on command line, even if it's not used. Needs to be fixed.
+* `spawn_process` is not implemented as remote command yet.
 * In gRPC version 1.42.0 on Pi OS is the following environment variable required 'LD_PRELOAD=/usr/lib/gcc/arm-linux-gnueabihf/10/libatomic.so'. due to linker problem, probably fixed in the gRPC release.

@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="oocd-tool",
-    version="0.1.1",
+    version="0.2.0",
     author="Jacob Schultz Andersen",
     author_email="schultz.jacob@gmail.com",
     description="A flexible configuration and remote contol tool for openocd.",

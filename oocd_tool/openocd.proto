@@ -23,7 +23,7 @@ message void {}
 
 service OpenOcd {
 	rpc ProgramDevice(stream ProgramRequest) returns (stream LogStreamResponse);
-	rpc ResetDevice(void) returns (void);
+	rpc ResetDevice(void) returns (stream LogStreamResponse);
 	rpc StartDebug(void) returns (void);
  	rpc StopDebug(void) returns (void);
 	rpc LogStreamCreate(LogStreamRequest) returns (stream LogStreamResponse);
