@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\ropenocd.proto\x12\x03rpi\"$\n\x10LogStreamRequest\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\"!\n\x11LogStreamResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x1e\n\x0eProgramRequest\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\x06\n\x04void2\xfb\x01\n\x07OpenOcd\x12@\n\rProgramDevice\x12\x13.rpi.ProgramRequest\x1a\x16.rpi.LogStreamResponse(\x01\x30\x01\x12#\n\x0bResetDevice\x12\t.rpi.void\x1a\t.rpi.void\x12\"\n\nStartDebug\x12\t.rpi.void\x1a\t.rpi.void\x12!\n\tStopDebug\x12\t.rpi.void\x1a\t.rpi.void\x12\x42\n\x0fLogStreamCreate\x12\x15.rpi.LogStreamRequest\x1a\x16.rpi.LogStreamResponse0\x01\x62\x06proto3'
+  serialized_pb=b'\n\ropenocd.proto\x12\x03rpi\"$\n\x10LogStreamRequest\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\"!\n\x11LogStreamResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x1e\n\x0eProgramRequest\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\x06\n\x04void2\x8a\x02\n\x07OpenOcd\x12@\n\rProgramDevice\x12\x13.rpi.ProgramRequest\x1a\x16.rpi.LogStreamResponse(\x01\x30\x01\x12\x32\n\x0bResetDevice\x12\t.rpi.void\x1a\x16.rpi.LogStreamResponse0\x01\x12\"\n\nStartDebug\x12\t.rpi.void\x1a\t.rpi.void\x12!\n\tStopDebug\x12\t.rpi.void\x1a\t.rpi.void\x12\x42\n\x0fLogStreamCreate\x12\x15.rpi.LogStreamRequest\x1a\x16.rpi.LogStreamResponse0\x01\x62\x06proto3'
 )
 
 
@@ -189,7 +189,7 @@ _OPENOCD = _descriptor.ServiceDescriptor(
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
   serialized_start=136,
-  serialized_end=387,
+  serialized_end=402,
   methods=[
   _descriptor.MethodDescriptor(
     name='ProgramDevice',
@@ -207,7 +207,7 @@ _OPENOCD = _descriptor.ServiceDescriptor(
     index=1,
     containing_service=None,
     input_type=_VOID,
-    output_type=_VOID,
+    output_type=_LOGSTREAMRESPONSE,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),

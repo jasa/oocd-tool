@@ -63,8 +63,14 @@ config_path: @CONFIG@
 config.1: gdbinit
 config.2: openocd_gdbinit
 gdb_executable: arm-none-eabi-gdb-py
-gdb_args: -ex "target extended-remote pi:3333" -x @config.1@ -x @config.2@ @ELFFILE@
-openocd_remote: pi:50051
+gdb_args: -ex "target extended-remote localhost:3333" -x @config.1@ -x @config.2@ @ELFFILE@
+openocd_remote: localhost:50051
+#tls_mode: disabled
+
+# TLS uses buildin demo certificate if none specified.
+# use 'examples/gen_certificates.sh -cn <hostname>' to generate new certificates. See README.md
+cert_auth_key: my-secret-key
+#root_ca: <filepath>
 
 # User sections
 [program]
@@ -93,6 +99,13 @@ bindto: 0.0.0.0:50051
 cmd_program: openocd -f /home/ocd/.oocd-tool/openocd.cfg -c "program_device {}"
 cmd_reset: openocd -f /home/ocd/.oocd-tool/openocd.cfg -c "reset_device"
 cmd_debug: /usr/bin/openocd -f /home/ocd/.oocd-tool/openocd.cfg
+#
+# TLS uses buildin demo certificate if none specified
+# use 'examples/gen_certificates.sh -cn <hostname>' to generate new certificates. See README.md
+cert_auth_key: my-secret-key
+#server_key: <filepath>
+#server_cert: <filepath>
+
 [log]
 file: /tmp/ocd-rpcd.log
 level: ERROR

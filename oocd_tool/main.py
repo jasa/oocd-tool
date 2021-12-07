@@ -140,7 +140,9 @@ def run_openocd_remote(rpc, args):
         for line in stream:
             print(line)
     elif cmd == 'reset':
-        rpc.reset_device()
+        stream = rpc.reset_device()
+        for line in stream:
+            print(line)
     elif cmd == 'logstream' and n != -1:
         stream = rpc.log_stream_create(args[len(cmd) + 1:])
         for line in stream:
@@ -248,12 +250,13 @@ def main():
     if args.config == None:
         args.config = default_config_file()
 
-    if args.source == None or args.config == None or args.section == None:
-        error_exit("Invalid or missing parameres..")
-    if not Path(args.source).is_file():
-        error_exit("ELF file does not exists")
+    if args.section == None:
+        error_exit("Section not specified.")
+    if args.source != None and not Path(args.source).is_file():
+        error_exit("ELF file does not exists.")
     if not Path(args.config).is_file():
-        error_exit("Error cannot open config file: {}".format(args.config))
+        error_exit("Error cannot open config file: {}.".format(args.config))
+    if args.source == None: args.source = ''
 
     # regex fails with windows path's. as_posix() used as workarround
     config_path = PurePath(args.config).parent.as_posix()

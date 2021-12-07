@@ -86,7 +86,11 @@ class ClientChannel:
     def reset_device(self):
         with self._channel_type(self._host, self._auth_key) as channel:
             stub = openocd_pb2_grpc.OpenOcdStub(channel)
-            stub.ResetDevice(openocd_pb2.void())
+            result_generator = stub.ResetDevice(openocd_pb2.void())
+            _setup_cancel_request(result_generator)
+
+            for result in result_generator:
+               yield result.data.strip()
 
 
     @contextlib.contextmanager

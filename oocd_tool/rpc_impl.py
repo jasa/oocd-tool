@@ -19,7 +19,7 @@ class ConfigException(Exception):
     def __init__(self, message):
         self.message = message
 
-def openocd_program(cmd):
+def openocd_cmd(cmd):
     killall("openocd")
     proc = subprocess.Popen(cmd, stderr=subprocess.PIPE, universal_newlines=True, cwd=os.getcwd(), shell=True)
     for ln in iter(proc.stderr.readline, ""):
@@ -30,12 +30,12 @@ def openocd_program(cmd):
         _LOGGER.error("openocd_program failed: '{}', returncode: {}".format(cmd, ret))
         raise subprocess.CalledProcessError(ret, cmd)
 
-def openocd_reset_device(cmd):
-    killall("openocd")
-    proc = subprocess.run(cmd, cwd=os.getcwd(), shell=True)
-    if proc.returncode != 0:
-        _LOGGER.error("openocd_reset_device failed: '{}', returncode: {}".format(cmd, proc.returncode))
-        raise subprocess.CalledProcessError(proc.returncode, cmd)
+#def openocd_cmd(cmd):
+#    killall("openocd")
+#    proc = subprocess.run(cmd, cwd=os.getcwd(), shell=True)
+#    if proc.returncode != 0:
+#        _LOGGER.error("openocd_cmd failed: '{}', returncode: {}".format(cmd, proc.returncode))
+#        raise subprocess.CalledProcessError(proc.returncode, cmd)
 
 def openocd_start_debug(cmd):
     killall("openocd")
@@ -46,19 +46,23 @@ def openocd_start_debug(cmd):
         _LOGGER.error("openocd_start_debug failed: '{}', returncode: {}".format(cmd, ret))
         raise subprocess.CalledProcessError(ret, 'openocd_start_debug')
 
+
 def openocd_terminate():
     killall("openocd")
+
 
 def killall(name):
     l = process_pid_list(name)
     for pid in l:
         os.kill(pid, signal.SIGTERM)
 
+
 def write_stream_to_file(filename, request_iterator):
         file = open(filename, "wb")
         for request in request_iterator:
             file.write(request.data)
         file.close()
+
 
 def process_pid_list(name):
     res = []

@@ -19,10 +19,10 @@ class OpenOcdStub(object):
                 request_serializer=openocd__pb2.ProgramRequest.SerializeToString,
                 response_deserializer=openocd__pb2.LogStreamResponse.FromString,
                 )
-        self.ResetDevice = channel.unary_unary(
+        self.ResetDevice = channel.unary_stream(
                 '/rpi.OpenOcd/ResetDevice',
                 request_serializer=openocd__pb2.void.SerializeToString,
-                response_deserializer=openocd__pb2.void.FromString,
+                response_deserializer=openocd__pb2.LogStreamResponse.FromString,
                 )
         self.StartDebug = channel.unary_unary(
                 '/rpi.OpenOcd/StartDebug',
@@ -82,10 +82,10 @@ def add_OpenOcdServicer_to_server(servicer, server):
                     request_deserializer=openocd__pb2.ProgramRequest.FromString,
                     response_serializer=openocd__pb2.LogStreamResponse.SerializeToString,
             ),
-            'ResetDevice': grpc.unary_unary_rpc_method_handler(
+            'ResetDevice': grpc.unary_stream_rpc_method_handler(
                     servicer.ResetDevice,
                     request_deserializer=openocd__pb2.void.FromString,
-                    response_serializer=openocd__pb2.void.SerializeToString,
+                    response_serializer=openocd__pb2.LogStreamResponse.SerializeToString,
             ),
             'StartDebug': grpc.unary_unary_rpc_method_handler(
                     servicer.StartDebug,
@@ -140,9 +140,9 @@ class OpenOcd(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/rpi.OpenOcd/ResetDevice',
+        return grpc.experimental.unary_stream(request, target, '/rpi.OpenOcd/ResetDevice',
             openocd__pb2.void.SerializeToString,
-            openocd__pb2.void.FromString,
+            openocd__pb2.LogStreamResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

@@ -60,7 +60,7 @@ class OpenOcd(openocd_pb2_grpc.OpenOcdServicer):
 
         tmp = tempfile.NamedTemporaryFile()
         write_stream_to_file(tmp.name, request_iterator)
-        log_output = openocd_program(self.config['cmd_program'].format(tmp.name))
+        log_output = openocd_cmd(self.config['cmd_program'].format(tmp.name))
 
         try:
             for data in log_output:
@@ -72,9 +72,16 @@ class OpenOcd(openocd_pb2_grpc.OpenOcdServicer):
         _LOGGER.debug("Regained servicer thread.")
 
     def ResetDevice(self, request, context):
-        openocd_reset_device(self.config['cmd_reset'])
         _LOGGER.info("ResetDevice called")
-        return openocd_pb2.void()
+        log_output = openocd_cmd(self.config['cmd_reset'])
+        try:
+            for data in log_output:
+                yield openocd_pb2.LogStreamResponse(data=data)
+        except:
+            _LOGGER.info("Cancelling RPC RunOpenOcd.")
+            context.cancel()
+
+        _LOGGER.debug("Regained servicer thread.")
 
     def StartDebug(self, request, context):
         openocd_start_debug(self.config['cmd_debug'])
