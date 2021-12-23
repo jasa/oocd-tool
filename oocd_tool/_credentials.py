@@ -14,6 +14,7 @@
 
 import os
 
+
 def _load_credential_from_file(filepath):
     real_path = os.path.join(os.path.dirname(__file__), filepath)
     with open(real_path, 'rb') as f:
@@ -25,15 +26,15 @@ SERVER_CERTIFICATE_KEY = _load_credential_from_file('credentials/localhost.key')
 ROOT_CERTIFICATE = _load_credential_from_file('credentials/root.crt')
 
 
-def load_certificates(cert):
-    if 'root_ca' in cert:
+def load_certificates(config):
+    if 'root_ca' in config:
         global ROOT_CERTIFICATE
-        ROOT_CERTIFICATE = _load_credential_from_file(cert['root_ca'])
-    if 'server_cert' in cert:
+        ROOT_CERTIFICATE = _load_credential_from_file(config.root_ca)
+    if 'server_cert' in config:
         global SERVER_CERTIFICATE
-        SERVER_CERTIFICATE = _load_credential_from_file(cert['server_cert'])
-    if 'server_key' in cert:
+        SERVER_CERTIFICATE = _load_credential_from_file(config.server_cert)
+    if 'server_key' in config:
         global SERVER_CERTIFICATE_KEY
-        SERVER_CERTIFICATE_KEY = _load_credential_from_file(cert['server_key'])
+        SERVER_CERTIFICATE_KEY = _load_credential_from_file(config.server_key)
 
 

@@ -10,23 +10,25 @@ import os
 import psutil
 import platform
 import subprocess
-from psutil import Process
-from pathlib import PurePath, Path
+
 
 class ConfigException(Exception):
     def __init__(self, message):
         self.message = message
 
+
 class ProcessException(Exception):
     def __init__(self, message):
         self.message = message
 
+
 class BackgroundProcess:
     def __init__(self, command, args, visible):
         self.cmd = command
-        kwargs = { 'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP } if 'Windows' in platform.platform() else {}
+        kwargs = {'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP} if 'Windows' in platform.platform() else {}
         redir = None if visible else subprocess.DEVNULL
-        self._proc = subprocess.Popen(command + ' ' + args, stderr=redir, start_new_session=True, cwd=os.getcwd(), shell=True, **kwargs)
+        self._proc = subprocess.Popen(command + ' ' + args, stderr=redir, start_new_session=True, cwd=os.getcwd(),
+                                      shell=True, **kwargs)
 
     def wait(self):
         self._proc.communicate()
@@ -35,14 +37,15 @@ class BackgroundProcess:
 
     def terminate(self):
         self._proc.terminate()
-        if self._proc.returncode != None and self._proc.returncode > 1:
+        if self._proc.returncode is not None and self._proc.returncode > 1:
             raise ProcessException('Error: {} returncode: {}'.format(self.cmd, self._proc.returncode))
 
     def is_running(self):
-        return True if self._proc.poll() == None else False
+        return True if self._proc.poll() is None else False
 
     def returncode(self):
         return self._proc.returncode
+
 
 class BlockingProcess:
     def __init__(self, command, args):
@@ -55,7 +58,7 @@ class BlockingProcess:
 def is_process_running(name):
     for proc in psutil.process_iter(['pid', 'name']):
         try:
-            if (proc.name() == name):
+            if proc.name() == name:
                 return True, proc.pid
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             pass
@@ -63,6 +66,6 @@ def is_process_running(name):
 
 
 def terminate(proc):
-    if proc != None:
+    if proc is not None:
         if proc.is_running():
             proc.terminate()

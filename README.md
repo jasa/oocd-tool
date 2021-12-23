@@ -1,6 +1,6 @@
 [![Upload Python Package](https://github.com/jasa/oocd-tool/actions/workflows/python-publish.yml/badge.svg)](https://github.com/jasa/oocd-tool/actions/workflows/python-publish.yml)
 # oocd-tool
-### A flexible configuration and remote contol tool for openocd.
+### A flexible configuration and remote control tool for openocd.
 
 This tool was made to create a wireless development environment for a project. It can hopefully be useful to someone else and any suggestions or ideas there can improve the tool are welcome.
 
@@ -9,16 +9,16 @@ This tool was made to create a wireless development environment for a project. I
 2. Runs openocd as background process then debugging. (Windows compatible)
 3. Runs gdb/openocd in pipe mode.
 4. Capable of log streaming from remote openocd host.
-5. TLS/SSL based tansport layer with preshared key.
+5. TLS/SSL based transport layer with pre shared key.
 
 ### Usage
 Define custom sections as needed using python syntax for [configparser.ExtendedInterpolation](https://docs.python.org/3/library/configparser.html)
-A default .oocd-tool directory with example files is create in the home dir (at first run). Can be overwritten on command line with a '-c'.
+A default .oocd-tool directory with example files is created in the home dir (at first run). Can be overwritten on command line with a '-c'.
 
-config.xx: keys defines config files. They can be specified with full path or none, they are prefix with the default configuration directory if no path is given.
+config.xx: keys defines config files. They can be specified with full path or none, they are prefixed with the default configuration directory if no path is given.
 
-3 configuration files is available in the examples directory for each operation mode. (remote.cfg, pipe.cfg and spawn.cfg).
-The active default configuration is should be placed in ~/.oocd-tool/oocd-tool.cfg with the rest of the configuration files.
+3 configuration files is available in the examples' directory for each operation mode. (remote.cfg, pipe.cfg and spawn.cfg).
+The active default configuration should be placed in ~/.oocd-tool/oocd-tool.cfg with the rest of the configuration files.
 
 Command line syntax:
 
@@ -29,10 +29,10 @@ Use '-d' for a dry run. Prints only commands.
 Command line syntax gRPC daemon, see examples folder for configuration:
 `oocd-rpcd -c oocd-rpcd.cfg`
 
-A usefull environment variable for debugging.
+A usefully environment variable for debugging.
 `export GRPC_VERBOSITY=debug`
 
-**Tags avalible:**
+**Tags available:**
 ```
 @TMPFILE@  creates a temporary file. May only be used in pairs once, and not in default section.
 @CONFIG@   equales to default config path or path from '-c' on command line

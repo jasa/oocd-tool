@@ -129,6 +129,7 @@ Type=simple
 WantedBy=multi-user.target
 """
 
+
 def create_default_config(path):
     Path(path).mkdir()
     with Path(path, 'gdbinit').open(mode='w') as f: f.write(_GDBINIT)

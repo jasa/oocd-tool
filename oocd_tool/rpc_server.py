@@ -22,6 +22,8 @@ import oocd_tool.openocd_pb2_grpc as openocd_pb2_grpc
 from oocd_tool.rpc_impl import *
 
 _LOGGER = logging.getLogger(__name__)
+
+
 class OpenOcd(openocd_pb2_grpc.OpenOcdServicer):
 
     def __init__(self, config):
@@ -31,15 +33,15 @@ class OpenOcd(openocd_pb2_grpc.OpenOcdServicer):
     def LogStreamCreate(self, request, context):
         _LOGGER.info("LogStreamCreate called.")
         stop_event = threading.Event()
-        self.log_reader = LogReader()
+        log_reader = LogReader()
 
         def on_rpc_done():
             _LOGGER.debug("Attempting to regain servicer thread.")
             stop_event.set()
-            self.log_reader.abort()
+            log_reader.abort()
 
         context.add_callback(on_rpc_done)
-        log_output = self.log_reader.read(request.filename)
+        log_output = log_reader.read(request.filename)
 
         try:
             for data in log_output:
@@ -53,11 +55,12 @@ class OpenOcd(openocd_pb2_grpc.OpenOcdServicer):
     def ProgramDevice(self, request_iterator, context):
         _LOGGER.info("StartDebug called.")
         stop_event = threading.Event()
+
         def on_rpc_done():
             _LOGGER.debug("Attempting to regain servicer thread.")
             stop_event.set()
-        context.add_callback(on_rpc_done)
 
+        context.add_callback(on_rpc_done)
         tmp = tempfile.NamedTemporaryFile()
         write_stream_to_file(tmp.name, request_iterator)
         log_output = openocd_cmd(self.config['cmd_program'].format(tmp.name))
@@ -93,12 +96,13 @@ class OpenOcd(openocd_pb2_grpc.OpenOcdServicer):
         _LOGGER.info("StopDebug called.")
         return openocd_pb2.void()
 
+
 class SignatureValidationInterceptor(grpc.ServerInterceptor):
 
     def __init__(self, auth):
         self.auth_key = auth
 
-        def abort(ignored_request, context):
+        def abort(_ignored_request, context):
             context.abort(grpc.StatusCode.UNAUTHENTICATED, 'Invalid signature')
 
         self._abortion = grpc.unary_unary_rpc_method_handler(abort)
@@ -115,7 +119,7 @@ class SignatureValidationInterceptor(grpc.ServerInterceptor):
 def _running_server(config):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=2), maximum_concurrent_rpcs=1)
     openocd_pb2_grpc.add_OpenOcdServicer_to_server(OpenOcd(config), server)
-    actual_port = server.add_insecure_port(config['bindto'])
+    server.add_insecure_port(config['bindto'])
     server.start()
     return server
 
@@ -127,27 +131,27 @@ def _running_tls_server(config, auth):
     openocd_pb2_grpc.add_OpenOcdServicer_to_server(OpenOcd(config), server)
 
     server_credentials = grpc.ssl_server_credentials(((
-        _credentials.SERVER_CERTIFICATE_KEY,
-        _credentials.SERVER_CERTIFICATE,
-    ),))
+                                                          _credentials.SERVER_CERTIFICATE_KEY,
+                                                          _credentials.SERVER_CERTIFICATE,
+                                                      ),))
 
-    port = server.add_secure_port(config['bindto'], server_credentials)
+    server.add_secure_port(config['bindto'], server_credentials)
     server.start()
     return server
 
 
 def main():
-    parser = argparse.ArgumentParser(description = 'oocd-rpcd')
-    parser.add_argument(dest = 'config_file', nargs = '?', metavar = 'CONFIG', help = 'configuration file')
+    parser = argparse.ArgumentParser(description='oocd-rpcd')
+    parser.add_argument(dest='config_file', nargs='?', metavar='CONFIG', help='configuration file')
     args = parser.parse_args()
     parser = ConfigParser()
 
-    if args.config_file == None or not Path(args.config_file).exists():
+    if args.config_file is None or not Path(args.config_file).exists():
         raise ConfigException("Error: Missing configuration file.")
 
     parser.read(args.config_file)
     level_types = {'DEBUG': logging.DEBUG, 'INFO': logging.INFO,
-                 'WARNING': logging.WARNING, 'ERROR': logging.ERROR, 'CRITICAL': logging.CRITICAL}
+                   'WARNING': logging.WARNING, 'ERROR': logging.ERROR, 'CRITICAL': logging.CRITICAL}
 
     if parser.has_section('log'):
         config = parser['log']
@@ -165,7 +169,7 @@ def main():
     if 'tls_mode' in config and config['tls_mode'] == 'disabled':
         server = _running_server(config)
     else:
-        if not 'cert_auth_key' in config:
+        if 'cert_auth_key' not in config:
             _LOGGER.error("'cert_auth_key' not specified.")
             os.exit(1)
         _credentials.load_certificates(config)
@@ -175,6 +179,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-

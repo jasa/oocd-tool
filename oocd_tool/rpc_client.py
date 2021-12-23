@@ -15,11 +15,12 @@ import oocd_tool._credentials as _credentials
 
 
 def _setup_cancel_request(generator):
-    def cancel_request(unused_signum, unused_frame):
+    def cancel_request(_unused_signum, _unused_frame):
         generator.cancel()
         sys.exit(0)
 
     signal.signal(signal.SIGINT, cancel_request)
+
 
 class AuthGateway(grpc.AuthMetadataPlugin):
     def __init__(self, auth_key):
@@ -29,9 +30,11 @@ class AuthGateway(grpc.AuthMetadataPlugin):
         signature = context.method_name[::-1]
         callback(((self.auth_key, signature),), None)
 
+
 @contextlib.contextmanager
-def insecure_channel(addr, unused_signatur):
+def insecure_channel(addr, _unused_signatur):
     yield grpc.insecure_channel(addr)
+
 
 @contextlib.contextmanager
 def secure_channel(addr, auth):
@@ -45,8 +48,10 @@ def secure_channel(addr, auth):
     channel = grpc.secure_channel(addr, composite_credentials)
     yield channel
 
+
 def load_certificates(config):
     _credentials.load_certificates(config)
+
 
 class ClientChannel:
     def __init__(self, host, channel, auth):
@@ -72,8 +77,8 @@ class ClientChannel:
             stub = openocd_pb2_grpc.OpenOcdStub(channel)
 
             def file_reader(filename):
-                with open(filename, 'rb') as file:
-                    while chunk := file.read(2048):
+                with open(filename, 'rb') as f:
+                    while chunk := f.read(2048):
                         request = openocd_pb2.ProgramRequest(data=chunk)
                         yield request
 
@@ -81,7 +86,7 @@ class ClientChannel:
             _setup_cancel_request(result_generator)
 
             for result in result_generator:
-               yield result.data.strip()
+                yield result.data.strip()
 
     def reset_device(self):
         with self._channel_type(self._host, self._auth_key) as channel:
@@ -90,8 +95,7 @@ class ClientChannel:
             _setup_cancel_request(result_generator)
 
             for result in result_generator:
-               yield result.data.strip()
-
+                yield result.data.strip()
 
     @contextlib.contextmanager
     def debug_device(self):
@@ -102,5 +106,3 @@ class ClientChannel:
             yield
         finally:
             stub.StopDebug(openocd_pb2.void())
-
-

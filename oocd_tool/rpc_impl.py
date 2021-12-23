@@ -15,9 +15,11 @@ from time import sleep
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class ConfigException(Exception):
     def __init__(self, message):
         self.message = message
+
 
 def openocd_cmd(cmd):
     killall("openocd")
@@ -30,7 +32,8 @@ def openocd_cmd(cmd):
         _LOGGER.error("openocd_program failed: '{}', returncode: {}".format(cmd, ret))
         raise subprocess.CalledProcessError(ret, cmd)
 
-#def openocd_cmd(cmd):
+
+# def openocd_cmd(cmd):
 #    killall("openocd")
 #    proc = subprocess.run(cmd, cwd=os.getcwd(), shell=True)
 #    if proc.returncode != 0:
@@ -42,7 +45,7 @@ def openocd_start_debug(cmd):
     proc = subprocess.Popen(cmd, cwd=os.getcwd(), shell=True)
     sleep(0.1)
     ret = proc.poll()
-    if ret != None:
+    if ret is not None:
         _LOGGER.error("openocd_start_debug failed: '{}', returncode: {}".format(cmd, ret))
         raise subprocess.CalledProcessError(ret, 'openocd_start_debug')
 
@@ -58,17 +61,17 @@ def killall(name):
 
 
 def write_stream_to_file(filename, request_iterator):
-        file = open(filename, "wb")
-        for request in request_iterator:
-            file.write(request.data)
-        file.close()
+    file = open(filename, "wb")
+    for request in request_iterator:
+        file.write(request.data)
+    file.close()
 
 
 def process_pid_list(name):
     res = []
     for proc in psutil.process_iter(['pid', 'name']):
         try:
-            if (proc.name() == name):
+            if proc.name() == name:
                 res.append(proc.pid)
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             pass
@@ -77,21 +80,21 @@ def process_pid_list(name):
 
 class LogReader:
     def __init__(self):
-      self.done = False
-      pass
+        self.done = False
+        pass
 
     def read(self, filename):
-      with open(filename, 'r') as file:
-          line = ''
-          while not self.done:
-              tmp = file.readline()
-              if tmp != "":
-                  line += tmp
-                  if line.endswith("\n"):
-                      yield line
-                      line = ''
-              else:
-                  sleep(0.1)
+        with open(filename, 'r') as file:
+            line = ''
+            while not self.done:
+                tmp = file.readline()
+                if tmp != "":
+                    line += tmp
+                    if line.endswith("\n"):
+                        yield line
+                        line = ''
+                else:
+                    sleep(0.1)
 
     def abort(self):
         self.done = True
