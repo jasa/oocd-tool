@@ -86,7 +86,7 @@ sudo systemctl start oocd-rpcd
 sudo systemctl enable oocd-rpcd
 ```
 
-**Generate new certificated**
+**Generate new certificate**
 ```
 # On remote server
 
