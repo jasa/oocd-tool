@@ -118,7 +118,7 @@ def validate_configuration(config, section):
         raise ConfigException(f'Error: mode not specified in section: [{section}]')
     if config.mode == 'gdb':
         check_mandatory_keys(config, ['gdb_executable', 'gdb_args'])
-        check_executable(config['gdb_executable'])
+        check_executable(config.gdb_executable)
     if config.mode != 'gdb':
         check_mandatory_keys(config, ['openocd_executable', 'openocd_args'])
         if 'openocd_remote' not in config:
